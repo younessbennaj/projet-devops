@@ -52,3 +52,72 @@ Voici la configuration finale de ma VM utilisant Debian 8
 ![image1](./assets/image-1.png)
 
 
+# Etape 2: Création du pipeline pour builder et tester l'application Front
+
+(Cette étape représente mon objectif au sein de l'équipe Devops-7)
+
+# Gitlab 
+
+## Le repository du projet
+
+J'ai d'abord créer un nouveau repo sur l'organisation gitlab de mon groupe. J'ai ajouté à ce repo l'application Angular qui a été fourni dans de ce projet. 
+
+![front1](./assets/front-1.png)
+
+J'ai ensuite créer une configuration pour l'intégration continue via le fichier ```.gitlab-ci.yml```. 
+
+## La config d'intégration continue
+
+```
+stages:
+  - testing
+  - building
+  - deploy
+
+
+test:
+  stage: testing
+  image: trion/ng-cli-karma:6.2.1
+  script:
+  - npm install
+  - npm run test
+
+
+
+build:
+  stage: building
+  image: trion/ng-cli
+  variables:
+    CHROME_BIN: google-chrome
+    CLI_VERSION: 6.2.1
+  script:
+    - npm install
+    - npm run build
+
+```
+
+Ma configuration comprends 3 ***jobs*** (étapes) différents: testing, building et deploy. Dans la config pour l'instant j'ai ajouté les deux jobs relatifs aux étapes de test et de build qui seront éffectué à chaque push sur le repo gitlab (https://gitlab.retrogala.ovh/ybennaj/angular-app/). 
+
+Pour la phase de test j'utilise l'image trion/ng-cli-karma:6.2.1 qui permet de pouvoir executer l'application dans un environnement d'execution qui comprends les dépendance nécessaire aux tests d'application angular avec karma. 
+
+Pour la phase de build j'utilise une autre image pour les applications Angular plus légère car sans Karma. 
+
+Il me reste encore l'étape de deploy mais je dois attendre le travail de mes camarades sur Ansible. 
+
+Au niveau des commandes du script, j'ai simplement ajouté celle prévu par le projet dans le package.json. 
+
+## Le runner
+
+Pour executer les différents jobs de ma pipeline je vais ensuite faire appel au runner crée par mon équipe. Je vais donc pour ça utiliser ce qu'on appelle les "shared runners" au sein de gitlab. 
+
+![front1](./assets/front-2.png)
+
+On peut voir sur cette image le runner crée par mon organisation et qui va avoir pour rôle d'éxecuter les différents jobs sur ma pipeline front.
+
+## La Pipeline
+
+Je vais donc pouvoir lancer mon intégration continue. On peut voir sur cette image les différentes pipeline qui ont succed ou failed. J'ai fait plusieurs test de config de CI avant de trouver la bonne. J'ai notament eu des difficultés à trouver la bonne image pour l'étape des tests. 
+
+![front1](./assets/front-3.png)
+
+J'ai finalement trouvé la config qui fontionne dans notre cas. Mes deux jobs sont succeed et ma pipeline également.

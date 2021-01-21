@@ -1,0 +1,24 @@
+stages:
+  - testing
+  - building
+  - deploy
+
+
+test:
+  stage: testing
+  image: trion/ng-cli-karma:6.2.1
+  script:
+  - npm install
+  - npm run test
+
+
+
+build:
+  stage: building
+  image: trion/ng-cli
+  variables:
+    CHROME_BIN: google-chrome
+    CLI_VERSION: 6.2.1
+  script:
+    - npm install
+    - npm run build
