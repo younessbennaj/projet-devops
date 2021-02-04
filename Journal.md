@@ -95,12 +95,43 @@ Et je dois rajouter une commande pour préciser à ansible de ne pas checker l'h
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 ```
 
+### Utilisation du module Ping
+
 Je vais maintenant ajouter la commande ad-hoc pour utiliser le module ping
 
 ```
 ansible -i hosts all -m ping
 ```
 
+J'obtient un pong en réponse:
+
+![vm](./assets/ping.png)
+
+### Utilisation du module Copy
+
+Je vais pouvoir copier un fichier texte avec du contenu sur ma machine distante 
+
+J'utilise pour ça la commande: 
+
+```
+ansible -i hosts all -m copy -a "dest=/home/youness/toto.txt content='bonjour youness bennaj'"
+```
+
+![vm](./assets/copy.png)
+
+Sur ma VM je retrouve bien le contenu de ce fichier
+
+![vm](./assets/copy-2.png)
+
+### Utilisation du module Setup
+
+Je peux également utiliser le module Setup pour obtenir les informations relatives à la machine hôte (distante).
+
+```
+ansible -i hosts all -m ping
+```
+
+![vm](./assets/setup.png)
 
 
 # Etape 2: Création du pipeline pour builder et tester l'application Front
