@@ -51,6 +51,57 @@ Voici la configuration finale de ma VM utilisant Debian 8
 
 ![image1](./assets/image-1.png)
 
+### Configuration Réseau de ma VM 
+
+Pour la configuration de ma VM j'ai choisi donc un "Accès" par pont pour pouvoir accéder à ma VM comme à une machine distante depuis ma machine via une connexion SSH. 
+
+![image1](./assets/vm1.png)
+
+J'ai ensuite transmis la clé plubique de ma machine à ma VM: 
+
+```
+cat ~/ssh/id_rsa.pub | ssh youness@192.168.1.131 "mkdir ~/.ssh -p && cat - >> ~/.ssh/authorized_keys"
+```
+
+Je peux maintenat me connecter via une connexion SSH à ma VM: 
+
+![vm](./assets/vm-3.png)
+
+### Création de mon template de VM
+
+je peux maintenant créer un template réutilisable de ma VM:
+
+![vm](./assets/vm-2.png)
+
+## Commade Ad-hoc 
+
+La moyen le plus facile de débuter avec Ansible est d'utiliser des commandes ad-hoc. Par la suite on pourra voir la syntaxe avec Yaml.
+
+### Etape 1: création de notre cluster 
+
+Notre cluster va être composé de notre machine ansible et de notre machine cliente (notre VM). 
+
+### Etape: Définition de l'inventaire
+
+dans un fichier hosts je vais décrire mon hôte auquel Ansible va pouvoir accéder via une connexion SSH. Dans mon cas il s'agit de la machine virtuelle.
+
+```
+192.168.1.131 ansible_user=youness ansible_password=azerty
+```
+
+Et je dois rajouter une commande pour préciser à ansible de ne pas checker l'hôte distant.
+
+```
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+```
+
+Je vais maintenant ajouter la commande ad-hoc pour utiliser le module ping
+
+```
+ansible -i hosts all -m ping
+```
+
+
 
 # Etape 2: Création du pipeline pour builder et tester l'application Front
 
