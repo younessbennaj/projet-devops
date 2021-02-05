@@ -1,0 +1,42 @@
+---
+- name: Déployer un conteneur apache
+  hosts: prod
+  become: true
+
+  tasks:
+    - name: Install aptitude using apt
+      apt: name=aptitude update_cache=yes force_apt_get=yes
+
+    - name: Install required system packages
+      apt: name={{ item }} update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python-pip', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/debian jessie stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Pull Apache Docker image
+      docker_image:
+        name: "httpd:2.4"
+        source: pull
+
+    - name: Create Apache container
+      docker_container:
+        name: "apache_container"
+        image: "httpd:2.4"
+        ports:
+          - "80:80"
+        state: present

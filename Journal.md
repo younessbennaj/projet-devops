@@ -133,6 +133,163 @@ ansible -i hosts all -m ping
 
 ![vm](./assets/setup.png)
 
+## Création de l'inventaire ansible 
+
+Dans notre DSI, chaque server va avoir un rôle. L'inventaire va être le fichier qui va permettre d'organiser nos différents hôtes en groupe. On pourra effectuer des actions seulement sur un groupe particulier par exemple. On pourra avoir des sous groupe à l'intérieur d'un groupe etc. 
+
+Pour concevoir ce fichier on va utiliser la notation .yml. Voici un exemple: 
+
+```
+all:
+  vars:
+    ansible_connection: ssh
+```
+
+Ici on va déclarer dans notre inventaire que pour tous les hôtes, ansible va utiliser une connextion ssh. 
+
+```
+mysql:
+  vars:
+    mysql_user_password: "MyPassWord!"
+```
+
+Ici la variable mysql_user_password pourra être utilisé par mes hôtes de la catégories mysql.
+
+### Création d'un fichier d'inventaire test sur une VM
+
+```
+all:
+  vars:
+    ansible_user: youness
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+prod:
+  hosts:
+    client: 
+      ansible_host: 192.168.1.131
+  vars:
+    ansible_password: azerty
+    env: production
+```
+
+Je peux ensuite utiliser la commande ad-hoc avev le module ping
+
+```
+ansible -i hosts.yml prod -m ping
+```
+
+Je vais ensuite aller créer un fichier text et utiliser la variable env:
+
+```
+ansible -i hosts.yml all -m copy -a "dest=/home/youness/env.txt content='bonjour youness bennaj {{ env }}'"
+```
+
+![env](./assets/env.png)
+
+On retrouve bien le contenu du fichier avec la valeur de la variable sur la VM.
+
+## Playbook 
+
+On voit bien ici qu'on se retrouve vite limité si on doit à chaque fois entrer des commandes ad-hoc les unes à la suite des autres, on a besoin d'automatiser ces actions. On va utiliser pour cela ce qu'on appelle un playbook. 
+
+### Définition 
+
+Un playbook est simplement un fichier .yml. Il comporte 3 composantes principales: 
+
++ name: le nom du playbook (titre indicatif)
++ hosts: la catégorie de l'inventaire sur laquelle on agit 
++ tasks: la liste des tâches qui vont être effectuées pour le playbook en question
+
+## Création d'un playbook: Déployer un containeur apache sur une VM
+
+Pour comprendre le fonctionnement d'un playbook on va en créer un qui va nous permettre de déployer un container docker issue d'une image apache et vérifier qu'on a bien un serveur apache sur le port 80:80 de notre VM. 
+
+Voici la structure de notre projet ansible:
+
+```
+- deploy.yml
+- /group_vars
+	- prod.yml
+- prod.yml
+```
+
+deploy.yml: notre playbook
+
+```
+---
+- name: Déployer un conteneur apache
+  hosts: prod
+  become: true
+
+  tasks:
+    - name: Install aptitude using apt
+      apt: name=aptitude update_cache=yes force_apt_get=yes
+
+    - name: Install required system packages
+      apt: name={{ item }} update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python-pip', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/debian jessie stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Pull Apache Docker image
+      docker_image:
+        name: "httpd:2.4"
+        source: pull
+
+    - name: Create Apache container
+      docker_container:
+        name: "apache_container"
+        image: "httpd:2.4"
+        # ports:
+        #   - "80:80"
+        command: 'docker run -dit --name my-apache-app -p 8080:80 -v "$PWD":/usr/local/apache2/htdocs/ httpd:2.4'
+        state: present
+```
+
+group_vars/prod.yml: le fichier qui contient les variables pour les hôtes de la catégorie production
+
+```
+---
+ansible_user: youness 
+ansible_password: azerty
+ansible_sudo_pass: azerty
+```
+
+prod.yml: notre inventaire 
+
+```
+all: 
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+prod:
+  hosts:
+    client:
+      ansible_host: 192.168.1.162
+```
+
+On peut enfin lancer la commande pour runner notre playbook:
+
+```
+ansible-playbook -l prod -i prod.yml -u youness deploy.yml
+```
+
+Le containeur apache à correctement été déployé:
+
+![front1](./assets/playbook.png)
 
 # Etape 2: Création du pipeline pour builder et tester l'application Front
 

@@ -1,0 +1,4 @@
+---
+ansible_user: youness 
+ansible_password: azerty
+ansible_sudo_pass: azerty
